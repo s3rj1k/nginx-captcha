@@ -7,10 +7,17 @@ import (
 	captcha "github.com/s3rj1k/captcha"
 )
 
+const defaultCharsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 func main() {
 	var err error
 
 	captchaConfig, err = captcha.NewOptions()
+	if err != nil {
+		panic(err)
+	}
+
+	err = captchaConfig.SetCharacterList(defaultCharsList)
 	if err != nil {
 		panic(err)
 	}

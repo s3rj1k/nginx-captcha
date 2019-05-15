@@ -6,13 +6,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image/jpeg"
-	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"syscall"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 const captchaHTMLTemplate = `
@@ -62,8 +61,8 @@ const captchaHTMLTemplate = `
 </html>
 `
 
-func hash(text string) string {
-	return fmt.Sprintf("\t%x", sha512.Sum512_256([]byte(text)))
+func getStringHash(text string) string {
+	return fmt.Sprintf("%x", sha512.Sum512_256([]byte(text)))
 }
 
 func captchaHandle(w http.ResponseWriter, _ *http.Request) {
@@ -86,7 +85,7 @@ func captchaHandle(w http.ResponseWriter, _ *http.Request) {
 	}{
 		Base64:   base64.StdEncoding.EncodeToString(buff.Bytes()),
 		Text:     captchaObj.Text,
-		TextHash: hash(captchaObj.Text),
+		TextHash: getStringHash(captchaObj.Text),
 	}
 
 	if err = tmpl.Execute(w, data); err != nil {
@@ -103,14 +102,14 @@ func captchaHandle(w http.ResponseWriter, _ *http.Request) {
 }
 
 func captchaSolveHandle(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	answer := strings.ToUpper(strings.TrimSpace(r.PostFormValue("answer")))
+	hash := strings.TrimSpace(r.PostFormValue("hash"))
 
-	spew.Dump(b)
+	if getStringHash(answer) == hash {
+		log.Println("GOOD BOY")
+	} else {
+		log.Println("BAD BOY")
+	}
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
