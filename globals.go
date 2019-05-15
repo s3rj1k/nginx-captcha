@@ -79,16 +79,20 @@ const captchaHTMLTemplate = `
         display: table;
       }
     </style>
-    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script>
       $(document).ready(function() {
         $('#captcha').submit(function(event) {
           event.preventDefault();
-            $.ajax({
-              url: $(this).attr("action"),
-              type: $(this).attr("method"),
-              data: $(this).serialize()
-            });
+          var xhr = new XMLHttpRequest();
+          var data = new FormData(document.getElementById("captcha"));
+          xhr.onreadystatechange = function() {
+            if (this.status > 200) {
+              console.log("ERROR!");
+            }
+          };
+          xhr.open('POST', '/', true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+          xhr.send(data);
         });
       });
     </script>
