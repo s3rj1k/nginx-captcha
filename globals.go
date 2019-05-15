@@ -19,7 +19,10 @@ var (
 
 const (
 	// HTTP server listen address
-	listenAddress = "127.0.0.1:8080"
+	listenAddress = "127.0.0.1:7169"
+
+	// defines case-insensitive list of captcha characters.
+	defaultCharsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	// captcha cookie name
 	captchaCookieName = "captcha"
 	// number of days for captcha cookie expiration
@@ -33,44 +36,44 @@ const captchaHTMLTemplate = `
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-		<title>CAPTCHA</title>
+    <title>CAPTCHA</title>
     <style type="text/css">
       .captcha {
-	      width: 320px;
-	    }
+        width: 320px;
+      }
       .answerInput {
-  	    width: 200px;
+        width: 200px;
       }
       .submitButton {
-	      float: right;
-	    }
-	    .submitButton::after {
+        float: right;
+      }
+      .submitButton::after {
         clear: both;
       }
-		</style>
-		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-		<script>
-  		$(document).ready(function() {
-		  	$('#captchaForm').submit(function(event) {
-					event.preventDefault();
-					$.ajax({
-						url: $(this).attr("action"),
-						type: $(this).attr("method"),
-						data: $(this).serialize()
-					});
-			  });
-	    });
+    </style>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script>
+      $(document).ready(function() {
+        $('#captchaForm').submit(function(event) {
+          event.preventDefault();
+            $.ajax({
+              url: $(this).attr("action"),
+              type: $(this).attr("method"),
+              data: $(this).serialize()
+            });
+        });
+      });
     </script>
-	</head>
-	<body>
-	  <div class="captcha">
+  </head>
+  <body>
+    <div class="captcha">
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .Text }}" />
-      <form id="#captchaForm" class="captcha" method="post" action="/validate">
-	      <input type="hidden" name="hash" value="{{ .TextHash }}"> 
-	      <input type="text" name="answer" class="answerInput" value="">
-		    <input type="submit" class="submitButton" value="Verify">
-			</form>
-		</div>
+      <form id="#captchaForm" class="captcha" method="post" action="/">
+        <input type="hidden" name="hash" value="{{ .TextHash }}"> 
+        <input type="text" name="answer" class="answerInput" value="">
+        <input type="submit" class="submitButton" value="Verify">
+      </form>
+    </div>
   </body>
 </html>
 `

@@ -7,9 +7,6 @@ import (
 	captcha "github.com/s3rj1k/captcha"
 )
 
-// defaultCharsList defines case-insensitive list of captcha characters.
-const defaultCharsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
 func main() {
 	var err error
 
@@ -44,9 +41,8 @@ func main() {
 	}
 
 	// define HTTP routes
-	http.HandleFunc("/", renderHandle)
+	http.HandleFunc("/", captchaHandle)
 	http.HandleFunc("/auth", authHandle)
-	http.HandleFunc("/validate", validateHandle)
 
 	// start captcha server
 	err = http.ListenAndServe(listenAddress, nil)
