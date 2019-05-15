@@ -1,0 +1,5 @@
+# Defaults for nginx-captcha initscript
+# sourced by /etc/init.d/nginx-captcha
+
+# Additional options that are passed to nginx-captcha
+DAEMON_ARGS=""

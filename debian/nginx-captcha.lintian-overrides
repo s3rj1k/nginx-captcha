@@ -1,0 +1,6 @@
+nginx-captcha: hardening-no-relro *
+nginx-captcha: hardening-no-pie *
+nginx-captcha: binary-without-manpage *
+nginx-captcha: new-package-should-close-itp-bug
+nginx-captcha: description-is-pkg-name *
+nginx-captcha: init.d-script-does-not-implement-required-option *

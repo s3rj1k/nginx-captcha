@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with systemd
+
+override_dh_builddeb:
+	dh_builddeb -- -Zgzip
+
+override_dh_auto_install:
+	dh_install nginx-captcha usr/sbin
+	dh_install nginx/captcha_include.conf /usr/share/doc/nginx-captcha/
+	dh_install nginx/captcha_main.conf /usr/share/doc/nginx-captcha/
+	dh_install nginx/captcha_server.conf /usr/share/doc/nginx-captcha/

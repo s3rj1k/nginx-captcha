@@ -1,0 +1,11 @@
+nginx-captcha (20191031) UNRELEASED; urgency=low
+
+  * More internal updates
+
+ -- s3rj1k <evasive.gyron@gmail.com>  Thu, 31 Oct 2019 12:00:00 +0200
+
+nginx-captcha (20190610) UNRELEASED; urgency=low
+
+  * Initial release
+
+ -- s3rj1k <evasive.gyron@gmail.com>  Mon, 10 Jun 2019 12:00:00 +0200
