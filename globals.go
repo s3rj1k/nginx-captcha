@@ -31,24 +31,20 @@ const (
 	captchaHashExpirationSeconds = 60
 )
 
+// https://www.w3schools.com/howto/howto_css_search_button.asp
+
 const captchaHTMLTemplate = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
     <title>CAPTCHA</title>
-    <style type="text/css">
-      .captcha {
-        width: 320px;
+    <style>
+      * {
+        box-sizing: border-box;
       }
-      .answerInput {
-        width: 200px;
-      }
-      .submitButton {
-        float: right;
-      }
-      .submitButton::after {
-        clear: both;
+      input[type="text"] {
+        text-align: center;
       }
     </style>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
@@ -66,12 +62,13 @@ const captchaHTMLTemplate = `
     </script>
   </head>
   <body>
-    <div class="captcha">
+    <div class="container">
+      <h2>CAPTCHA</h2>
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .Text }}" />
-      <form id="#captchaForm" class="captcha" method="post" action="/">
-        <input type="hidden" name="hash" value="{{ .TextHash }}"> 
-        <input type="text" name="answer" class="answerInput" value="">
-        <input type="submit" class="submitButton" value="Verify">
+      <form id="#captchaForm" method="POST" action="/">
+        <input type="hidden" name="hash" value="{{ .TextHash }}">
+        <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="">
+        <input type="submit" formtarget="_self" value="Verify">
       </form>
     </div>
   </body>
