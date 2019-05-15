@@ -38,7 +38,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", captchaHandle)
-	http.HandleFunc("/solve", captchaSolveHandle)
+	http.HandleFunc("/solve", captchaValidateHandle)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

@@ -6,13 +6,15 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image/jpeg"
-	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"syscall"
+	"time"
 )
+
+const captchaCookieName = "captcha"
 
 const captchaHTMLTemplate = `
 <!DOCTYPE html>
@@ -65,7 +67,17 @@ func getStringHash(text string) string {
 	return fmt.Sprintf("%x", sha512.Sum512_256([]byte(text)))
 }
 
-func captchaHandle(w http.ResponseWriter, _ *http.Request) {
+func captchaHandle(w http.ResponseWriter, r *http.Request) {
+	if captchaCookie, err := r.Cookie(captchaCookieName); err == nil && captchaCookie != nil {
+		if val, ok := db.Load(captchaCookie.Value); ok {
+			if expireTime, ok := val.(time.Time); ok {
+				if expireTime.After(time.Now()) {
+					return
+				}
+			}
+		}
+	}
+
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
 		http.Error(w, "captcha generation failed", http.StatusInternalServerError)
@@ -101,14 +113,25 @@ func captchaHandle(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func captchaSolveHandle(w http.ResponseWriter, r *http.Request) {
+func captchaValidateHandle(w http.ResponseWriter, r *http.Request) {
 	answer := strings.ToUpper(strings.TrimSpace(r.PostFormValue("answer")))
 	hash := strings.TrimSpace(r.PostFormValue("hash"))
 
 	if getStringHash(answer) == hash {
-		log.Println("GOOD BOY")
-	} else {
-		log.Println("BAD BOY")
+		id := genUUID()
+		expires := time.Now().AddDate(0, 0, 1)
+		cookie := &http.Cookie{
+			Name:     captchaCookieName,
+			Value:    id,
+			Expires:  expires,
+			MaxAge:   int(expires.Unix() - time.Now().Unix()),
+			Secure:   false,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		}
+
+		http.SetCookie(w, cookie)
+		db.Store(id, expires)
 	}
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
