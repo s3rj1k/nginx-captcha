@@ -43,14 +43,46 @@ const captchaHTMLTemplate = `
       * {
         box-sizing: border-box;
       }
-      input[type="text"] {
+      .container {
+        margin: auto;
+        max-width: 320px;
+      }
+      .container h2 {
         text-align: center;
+      }
+      form.captcha input[type="text"] {
+        text-align: center;
+        padding: 10px;
+        font-size: 17px;
+        border: 1px solid grey;
+        float: left;
+        width: 74%;
+        background: #f1f1f1;
+      }
+      form.captcha button {
+        float: left;
+        width: 26%;
+        padding: 10px;
+        background: #2196F3;
+        color: white;
+        font-size: 17px;
+        border: 1px solid grey;
+        border-left: none;
+        cursor: pointer;
+      }
+      form.captcha button:hover {
+        background: #0b7dda;
+      }
+      form.captcha::after {
+        content: "";
+        clear: both;
+        display: table;
       }
     </style>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script>
       $(document).ready(function() {
-        $('#captchaForm').submit(function(event) {
+        $('#captcha').submit(function(event) {
           event.preventDefault();
             $.ajax({
               url: $(this).attr("action"),
@@ -64,11 +96,11 @@ const captchaHTMLTemplate = `
   <body>
     <div class="container">
       <h2>CAPTCHA</h2>
-      <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .Text }}" />
-      <form id="#captchaForm" method="POST" action="/">
+      <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .TextHash }}" />
+      <form id="#captcha" class="captcha" method="POST" action="/">
         <input type="hidden" name="hash" value="{{ .TextHash }}">
         <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="">
-        <input type="submit" formtarget="_self" value="Verify">
+        <button type="submit">VERIFY</button>
       </form>
     </div>
   </body>

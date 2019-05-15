@@ -54,13 +54,10 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// populate struct with needed data for template render
 	data := struct {
 		Base64   string
-		Text     string
 		TextHash string
 	}{
 		// encode JPEG to base for data:URI
 		Base64: base64.StdEncoding.EncodeToString(buff.Bytes()),
-		// set captcha text
-		Text: captchaObj.Text,
 		// set captcha text hash
 		TextHash: getStringHash(captchaObj.Text),
 	}
