@@ -18,7 +18,7 @@ func captchaHandle(w http.ResponseWriter, r *http.Request) {
 		validateHandle(w, r)
 	default:
 		w.Header().Set("Allow", fmt.Sprintf("%s, %s", http.MethodGet, http.MethodPost))
-		http.Error(w, "only GET or POST", http.StatusMethodNotAllowed)
+		http.Error(w, "405, only GET or POST", http.StatusMethodNotAllowed)
 
 		return
 	}
@@ -28,7 +28,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// allow only GET method
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "only GET", http.StatusMethodNotAllowed)
+		http.Error(w, "405, only GET", http.StatusMethodNotAllowed)
 
 		return
 	}
@@ -36,7 +36,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// generate new captcha image
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
-		http.Error(w, "captcha failure", http.StatusInternalServerError)
+		http.Error(w, "500, captcha failure", http.StatusInternalServerError)
 
 		return
 	}
@@ -46,7 +46,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// encode captcha to JPEG
 	err = jpeg.Encode(&buff, captchaObj.Image, nil)
 	if err != nil {
-		http.Error(w, "image encoder failure", http.StatusInternalServerError)
+		http.Error(w, "500, image encoder failure", http.StatusInternalServerError)
 
 		return
 	}
@@ -71,7 +71,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// render captcha template
 	err = captchaTemplate.Execute(w, data)
 	if err != nil {
-		http.Error(w, "HTML render failure", http.StatusInternalServerError)
+		http.Error(w, "500, HTML render failure", http.StatusInternalServerError)
 
 		return
 	}
@@ -81,7 +81,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// allow only POST method
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "only POST", http.StatusMethodNotAllowed)
+		http.Error(w, "405, only POST", http.StatusMethodNotAllowed)
 
 		return
 	}
@@ -94,7 +94,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// lookup captcha hash in db
 	val, ok := db.Load(hash)
 	if !ok {
-		http.Error(w, "unknown captcha hash", http.StatusUnauthorized)
+		http.Error(w, "401, unknown captcha hash", http.StatusUnauthorized)
 
 		return
 	}
@@ -102,19 +102,19 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// check captcha hash expiration
 	hashExpireTime, ok := val.(time.Time)
 	if !ok {
-		http.Error(w, "unknown captcha hash", http.StatusInternalServerError)
+		http.Error(w, "500, unknown captcha hash", http.StatusInternalServerError)
 
 		return
 	}
 	if hashExpireTime.Before(time.Now()) {
-		http.Error(w, "expired captcha hash", http.StatusUnauthorized)
+		http.Error(w, "401, expired captcha hash", http.StatusUnauthorized)
 
 		return
 	}
 
 	// validate user inputed captcha answer
 	if getStringHash(answer) != hash {
-		http.Error(w, "invalid captcha answer", http.StatusUnauthorized)
+		http.Error(w, "401, invalid captcha answer", http.StatusUnauthorized)
 
 		return
 	}
@@ -122,7 +122,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// generate ID for cookie value
 	id, err := genUUID()
 	if err != nil {
-		http.Error(w, "entropy failure", http.StatusInternalServerError)
+		http.Error(w, "500, entropy failure", http.StatusInternalServerError)
 
 		return
 	}
@@ -161,5 +161,5 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Error(w, "invalid captcha cookie", http.StatusUnauthorized)
+	http.Error(w, "401, invalid captcha cookie", http.StatusUnauthorized)
 }
