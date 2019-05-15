@@ -19,6 +19,8 @@ func captchaHandle(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.Header().Set("Allow", fmt.Sprintf("%s, %s", http.MethodGet, http.MethodPost))
 		http.Error(w, "only GET or POST", http.StatusMethodNotAllowed)
+
+		return
 	}
 }
 
@@ -27,12 +29,16 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodGet)
 		http.Error(w, "only GET", http.StatusMethodNotAllowed)
+
+		return
 	}
 
 	// generate new captcha image
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
 		http.Error(w, "captcha failure", http.StatusInternalServerError)
+
+		return
 	}
 
 	var buff bytes.Buffer
@@ -41,6 +47,8 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	err = jpeg.Encode(&buff, captchaObj.Image, nil)
 	if err != nil {
 		http.Error(w, "image encoder failure", http.StatusInternalServerError)
+
+		return
 	}
 
 	// populate struct with needed data for template render
@@ -67,6 +75,8 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	err = captchaTemplate.Execute(w, data)
 	if err != nil {
 		http.Error(w, "HTML render failure", http.StatusInternalServerError)
+
+		return
 	}
 }
 
@@ -75,6 +85,8 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, "only POST", http.StatusMethodNotAllowed)
+
+		return
 	}
 
 	// get captcha answer from request form, case insensitive
@@ -86,26 +98,36 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	val, ok := db.Load(hash)
 	if !ok {
 		http.Error(w, "unknown captcha hash", http.StatusUnauthorized)
+
+		return
 	}
 
 	// check captcha hash expiration
 	hashExpireTime, ok := val.(time.Time)
 	if !ok {
 		http.Error(w, "unknown captcha hash", http.StatusInternalServerError)
+
+		return
 	}
 	if hashExpireTime.Before(time.Now()) {
 		http.Error(w, "expired captcha hash", http.StatusUnauthorized)
+
+		return
 	}
 
 	// validate user inputed captcha answer
 	if getStringHash(answer) != hash {
 		http.Error(w, "invalid captcha answer", http.StatusUnauthorized)
+
+		return
 	}
 
 	// generate ID for cookie value
 	id, err := genUUID()
 	if err != nil {
 		http.Error(w, "entropy failure", http.StatusInternalServerError)
+
+		return
 	}
 
 	// generate expire date
