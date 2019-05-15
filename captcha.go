@@ -6,55 +6,56 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image/jpeg"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"syscall"
-)
 
-// <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-// <script>
-// 	$("#capthaForm").submit(function( event ) {
-// 		event.preventDefault();
-// 		var $form = $(this),
-// 			answer = $form.find("input[id='answer']" ).val(),
-// 			hash = $form.find("input[id='hash']" ).val(),
-// 			url = $form.attr("action");
-// 		var posting = $.post(url, {
-// 			answer: answer,
-// 			hash: hash,
-// 		});
-// 	});
-// </script>
+	"github.com/davecgh/go-spew/spew"
+)
 
 const captchaHTMLTemplate = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>CAPTCHA</title>
-  </head>
-  <style type='text/css'>
-    .captcha {
-	    width: 320px;
-	  }
-    #answer {
-	    width: 200px;
-    }
-    #submit {
-	    float: right;
-	  }
-	  #submit::after {
-      clear: both;
-    }
-  </style>
+		<title>CAPTCHA</title>
+    <style type="text/css">
+      .captcha {
+	      width: 320px;
+	    }
+      .answerInput {
+  	    width: 200px;
+      }
+      .submitButton {
+	      float: right;
+	    }
+	    .submitButton::after {
+        clear: both;
+      }
+		</style>
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+		<script>
+  		$(document).ready(function() {
+		  	$('#captchaForm').submit(function(event) {
+					event.preventDefault();
+					$.ajax({
+						url: $(this).attr("action"),
+						type: $(this).attr("method"),
+						data: $(this).serialize()
+					});
+			  });
+	    });
+    </script>
+	</head>
 	<body>
 	  <div class="captcha">
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .Text }}" />
       <form id="#captchaForm" class="captcha" method="post" action="/solve">
-	      <input type="hidden" id="hash" value="{{ .TextHash }}"> 
-	      <input type="text" id="answer" value="">
-		    <input type="button" id="submit" value="Submit">
+	      <input type="hidden" name="hash" value="{{ .TextHash }}"> 
+	      <input type="text" name="answer" class="answerInput" value="">
+		    <input type="submit" class="submitButton" value="Verify">
 			</form>
 		</div>
   </body>
@@ -101,5 +102,15 @@ func captchaHandle(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func captchaSolveHandle(w http.ResponseWriter, _ *http.Request) {
+func captchaSolveHandle(w http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	spew.Dump(b)
+
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
