@@ -26,7 +26,7 @@ func captchaHandle(w http.ResponseWriter, r *http.Request) {
 
 func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// allow only GET method
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		http.Error(w, "only GET", http.StatusMethodNotAllowed)
 
