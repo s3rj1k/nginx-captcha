@@ -101,7 +101,7 @@ const captchaHTMLTemplate = `
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .TextHash }}" />
       <form id="#captcha" class="captcha" method="POST" action="/">
         <input type="hidden" name="hash" value="{{ .TextHash }}">
-        <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="" autofocus>
+        <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="" autocomplete="off" autofocus>
         <button type="submit">VERIFY</button>
       </form>
     </div>
