@@ -98,7 +98,7 @@ const captchaHTMLTemplate = `
   <body>
     <div class="container">
       <h2>CAPTCHA</h2>
-      <p>Please confirm that you are not a robot.</p>
+      <p>Please verify that you are not a robot.</p>
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .TextHash }}" />
       <form id="#captcha" class="captcha" method="POST" action="/">
         <input type="hidden" name="hash" value="{{ .TextHash }}">
