@@ -194,8 +194,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// generate expire date
-	expires := time.Now().AddDate(0, 0, captchaCookieExpireDays)
+	// generate expire for cookie
+	expires := time.Now().Add(time.Duration(captchaCookieExpirationSeconds * 1000000000))
+
 	// create cookie
 	cookie := &http.Cookie{
 		Name:     captchaCookieName,

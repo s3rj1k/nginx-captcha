@@ -30,8 +30,8 @@ const (
 	defaultCharsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	// captcha cookie name
 	captchaCookieName = "captcha"
-	// number of days for captcha cookie expiration
-	captchaCookieExpireDays = 1
+	// number of seconds for captcha cookie expiration
+	captchaCookieExpirationSeconds = 86400
 	// number of seconds for captcha hash expiration
 	captchaHashExpirationSeconds = 60
 )
