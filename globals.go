@@ -56,8 +56,10 @@ var (
 	// in memory key:value db
 	db sync.Map
 
-	// Unix socket path
+	// unix socket path
 	cmdSocket string
+	// log date/time
+	cmdLogDateTime bool
 
 	// Logging levels
 	Info  *log.Logger

@@ -3,12 +3,12 @@ Description=Nginx CAPTCHA service
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 
 Environment="DAEMON_ARGS="
 EnvironmentFile=-/etc/default/nginx-captcha
 
-ExecStart=/usr/sbin/nginx-captcha ${DAEMON_ARGS}
+ExecStart=/usr/sbin/nginx-captcha -log-date-time=false ${DAEMON_ARGS}
 
 Restart=on-failure
 RestartSec=10
