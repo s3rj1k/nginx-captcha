@@ -56,8 +56,8 @@ var (
 	// in memory key:value db
 	db sync.Map
 
-	// unix socket path
-	cmdSocket string
+	// IP:PORT or unix socket path
+	cmdAddress string
 	// log date/time
 	cmdLogDateTime bool
 

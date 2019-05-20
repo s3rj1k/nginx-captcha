@@ -9,7 +9,7 @@ import (
 // nolint: gochecknoinits
 func init() {
 	// command line flags
-	flag.StringVar(&cmdSocket, "socket", "/run/nginx-captcha.sock", "unix socket path")
+	flag.StringVar(&cmdAddress, "address", "unix:/run/nginx-captcha.sock", `IP:PORT or Unix Socket path prefixd with "unix:"`)
 	flag.BoolVar(&cmdLogDateTime, "log-date-time", true, "add date/time to log output")
 	flag.Parse()
 

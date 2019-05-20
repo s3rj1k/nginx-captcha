@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"syscall"
 
 	captcha "github.com/s3rj1k/captcha"
@@ -46,31 +47,6 @@ func main() {
 		Error.Fatalf("captcha service template error: %s\n", err.Error())
 	}
 
-	// remove old Unix socket
-	if _, err = os.Stat(cmdSocket); !os.IsNotExist(err) {
-		if err = syscall.Unlink(cmdSocket); err != nil {
-			Error.Fatalf("captcha service socket error: %s\n", err.Error())
-		}
-	}
-
-	// listen on unix socket
-	us, err := net.Listen("unix", cmdSocket)
-	if err != nil {
-		Error.Fatalf("captcha service socket error: %s\n", err.Error())
-	}
-
-	// close unix socket on exit
-	defer func() {
-		if err = us.Close(); err != nil {
-			Error.Fatalf("captcha service socket error: %s\n", err.Error())
-		}
-	}()
-
-	// change unix socket permissions
-	if err = os.Chmod(cmdSocket, os.FileMode(0777)); err != nil {
-		Error.Fatalf("captcha service socket error: %s\n", err.Error())
-	}
-
 	// create new HTTP mux and define HTTP routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", captchaHandle)
@@ -79,8 +55,48 @@ func main() {
 	// run DB cleaner to clean expired keys
 	go cleanDB(&db)
 
+	// define net listner for HTTP serve function
+	var nl net.Listener
+
+	switch {
+	case strings.HasPrefix(cmdAddress, "unix:"):
+		// get socket path
+		socket := strings.TrimPrefix(cmdAddress, "unix:")
+
+		// remove old Unix socket
+		if _, err = os.Stat(socket); !os.IsNotExist(err) {
+			if err = syscall.Unlink(socket); err != nil {
+				Error.Fatalf("captcha service socket error: %s\n", err.Error())
+			}
+		}
+
+		// listen on unix socket
+		nl, err = net.Listen("unix", socket)
+		if err != nil {
+			Error.Fatalf("captcha service socket error: %s\n", err.Error())
+		}
+
+		// close unix socket on exit
+		defer func() {
+			if err = nl.Close(); err != nil {
+				Error.Fatalf("captcha service socket error: %s\n", err.Error())
+			}
+		}()
+
+		// change unix socket permissions
+		if err = os.Chmod(socket, os.FileMode(0777)); err != nil {
+			Error.Fatalf("captcha service socket error: %s\n", err.Error())
+		}
+	default:
+		// listen on TCP
+		nl, err = net.Listen("tcp", cmdAddress)
+		if err != nil {
+			Error.Fatalf("captcha service TCP error: %s\n", err.Error())
+		}
+	}
+
 	// start captcha server
-	err = http.Serve(us, mux)
+	err = http.Serve(nl, mux)
 	if err != nil {
 		Error.Fatalf("captcha service start error: %s\n", err.Error())
 	}
