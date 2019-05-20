@@ -1,0 +1,20 @@
+[Unit]
+Description=Nginx CAPTCHA service
+After=network.target
+
+[Service]
+Type=forking
+
+Environment="DAEMON_ARGS="
+EnvironmentFile=-/etc/default/nginx-captcha
+
+ExecStart=/usr/sbin/nginx-captcha ${DAEMON_ARGS}
+
+Restart=on-failure
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
