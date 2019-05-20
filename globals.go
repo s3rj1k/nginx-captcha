@@ -4,25 +4,9 @@ import (
 	"html/template"
 	"log"
 	"sync"
+	"time"
 
 	captcha "github.com/s3rj1k/captcha"
-)
-
-// nolint: gochecknoglobals
-var (
-	// captcha HTML template
-	captchaTemplate *template.Template
-	// captcha config object
-	captchaConfig *captcha.Options
-	// in memory key:value db
-	db sync.Map
-
-	// Unix socket path
-	cmdSocket string
-
-	// Logging levels
-	Info  *log.Logger
-	Error *log.Logger
 )
 
 const (
@@ -34,6 +18,50 @@ const (
 	captchaCookieExpirationSeconds = 86400
 	// number of seconds for captcha hash expiration
 	captchaHashExpirationSeconds = 60
+	// number of nanoseconds in second
+	nanoSecondsInSecond = 1000000000
+)
+
+const (
+	messageOnlyGetOrPostMethod  = "only GET or POST method"
+	messageOnlyGetMethod        = "only GET method"
+	messageOnlyPostMethod       = "only POST method"
+	messageCaptchaFailure       = "captcha failure"
+	messageImageEncoderFailure  = "image encoder failure"
+	messageHTMLRenderFailure    = "HTML render failure"
+	messageUnknownCaptchaHash   = "unknown captcha hash"
+	messageExpiredCaptchaHash   = "expired captcha hash"
+	messageInvalidCaptchaAnswer = "invalid captcha answer"
+	messageEntropyFailure       = "entropy failure"
+	messageValidCaptchaCookie   = "valid captcha cookie"
+	messageInvalidCaptchaCookie = "invalid captcha cookie"
+	messageInvalidCaptchaHash   = "invalid captcha hash"
+	messageRecordExpired        = "record expired"
+)
+
+type captchaDBRecord struct {
+	// Domain defines valid captcha domain
+	Domain string
+	// Expires defines captcha TTL
+	Expires time.Time
+}
+
+// nolint: gochecknoglobals
+var (
+	// captcha HTML template
+	captchaTemplate *template.Template
+	// captcha config object
+	captchaConfig *captcha.Options
+
+	// in memory key:value db
+	db sync.Map
+
+	// Unix socket path
+	cmdSocket string
+
+	// Logging levels
+	Info  *log.Logger
+	Error *log.Logger
 )
 
 const captchaHTMLTemplate = `

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -9,16 +9,23 @@ import (
 func cleanDB(db *sync.Map) {
 	for {
 		// sleep inside infinite loop
-		time.Sleep(30 * time.Second)
+		time.Sleep(15 * time.Second)
+
 		// range over db
-		db.Range(func(key interface{}, value interface{}) bool {
-			// cast value to time
-			if expire, ok := value.(time.Time); ok {
+		db.Range(func(key interface{}, val interface{}) bool {
+			// cast value to captcha record
+			if record, ok := val.(captchaDBRecord); ok {
 				// check expiration time
-				if expire.Before(time.Now()) {
-					// set log data
-					data := fmt.Sprintf("%s, expired", key)
-					Info.Println(data)
+				if record.Expires.Before(time.Now()) {
+					Info.Printf(
+						"%d, Domain:%s, Key:%s, Expires:%v %s\n",
+						http.StatusOK,
+						record.Domain,
+						key,
+						record.Expires,
+						messageRecordExpired,
+					)
+
 					// delete key
 					db.Delete(key)
 				}

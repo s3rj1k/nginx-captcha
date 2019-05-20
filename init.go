@@ -13,10 +13,14 @@ func init() {
 	flag.Parse()
 
 	// initialize loggers
-	Info = log.New(os.Stdout,
+	Info = log.New(
+		os.Stdout,
 		"INFO: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
-	Error = log.New(os.Stderr,
+		log.Ldate|log.Ltime|log.Lshortfile,
+	)
+	Error = log.New(
+		os.Stderr,
 		"ERROR: ",
-		log.Ldate|log.Ltime|log.Lshortfile)
+		log.Ldate|log.Ltime|log.Lshortfile,
+	)
 }

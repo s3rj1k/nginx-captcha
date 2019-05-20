@@ -12,7 +12,6 @@ import (
 
 // ToDo:
 //  - Add HTML JS page Refresh (?)
-//  - Add graceful shutdown with CTRL+C (?)
 
 func main() {
 	var err error
