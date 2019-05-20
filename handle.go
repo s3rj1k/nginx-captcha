@@ -22,7 +22,7 @@ func captchaHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyGetOrPostMethod,
@@ -49,7 +49,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyGetMethod,
@@ -67,7 +67,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		Error.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageCaptchaFailure,
@@ -86,7 +86,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		Error.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageImageEncoderFailure,
@@ -134,7 +134,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		Error.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageHTMLRenderFailure,
@@ -152,7 +152,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyPostMethod,
@@ -175,7 +175,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageUnknownCaptchaHash,
@@ -192,7 +192,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Error.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageUnknownCaptchaHash,
@@ -208,7 +208,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageInvalidCaptchaHash,
@@ -224,7 +224,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageExpiredCaptchaHash,
@@ -240,7 +240,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Info.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageInvalidCaptchaAnswer,
@@ -257,7 +257,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		Error.Printf(
 			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
-			r.RemoteAddr,
+			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageEntropyFailure,
@@ -311,7 +311,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 						Info.Printf(
 							"%d, RAddr:%s, URL:%s%s, %s\n",
 							http.StatusOK,
-							r.RemoteAddr,
+							r.Header.Get("X-Real-IP"),
 							r.Header.Get("X-Forwarded-Host"),
 							r.Header.Get("X-Original-URI"),
 							messageValidCaptchaCookie,
@@ -327,7 +327,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	Info.Printf(
 		"%d, RAddr:%s, URL:%s%s, %s\n",
 		http.StatusUnauthorized,
-		r.RemoteAddr,
+		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
 		messageInvalidCaptchaCookie,
