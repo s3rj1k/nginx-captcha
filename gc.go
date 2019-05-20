@@ -18,11 +18,10 @@ func cleanDB(db *sync.Map) {
 				// check expiration time
 				if record.Expires.Before(time.Now()) {
 					Info.Printf(
-						"%d, Domain:%s, Key:%s, Expires:%v %s\n",
+						"%d, Domain:%s, Key:%s, %s\n",
 						http.StatusOK,
 						record.Domain,
 						key,
-						record.Expires,
 						messageRecordExpired,
 					)
 
