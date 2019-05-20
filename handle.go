@@ -20,8 +20,9 @@ func captchaHandle(w http.ResponseWriter, r *http.Request) {
 		validateHandle(w, r)
 	default:
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyGetOrPostMethod,
@@ -46,8 +47,9 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// allow only GET method
 	if r.Method != http.MethodGet {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyGetMethod,
@@ -63,8 +65,9 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
 		Error.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageCaptchaFailure,
@@ -81,8 +84,9 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	err = jpeg.Encode(&buff, captchaObj.Image, nil)
 	if err != nil {
 		Error.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageImageEncoderFailure,
@@ -128,8 +132,9 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		Error.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageHTMLRenderFailure,
@@ -145,8 +150,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// allow only POST method
 	if r.Method != http.MethodPost {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusMethodNotAllowed,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageOnlyPostMethod,
@@ -167,8 +173,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	val, ok := db.Load(hash)
 	if !ok {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageUnknownCaptchaHash,
@@ -183,8 +190,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	record, ok := val.(captchaDBRecord)
 	if !ok {
 		Error.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageUnknownCaptchaHash,
@@ -198,8 +206,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// check that captcha hash is valid for domain
 	if !strings.EqualFold(r.Header.Get("X-Forwarded-Host"), record.Domain) {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageInvalidCaptchaHash,
@@ -213,8 +222,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// check captcha hash expiration
 	if record.Expires.Before(time.Now()) {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageExpiredCaptchaHash,
@@ -228,8 +238,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// validate user inputed captcha answer
 	if getStringHash(answer) != hash {
 		Info.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusSeeOther,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageInvalidCaptchaAnswer,
@@ -244,8 +255,9 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	id, err := genUUID()
 	if err != nil {
 		Error.Printf(
-			"%d, URL:%s%s, %s\n",
+			"%d, RAddr:%s, URL:%s%s, %s\n",
 			http.StatusInternalServerError,
+			r.RemoteAddr,
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
 			messageEntropyFailure,
@@ -297,8 +309,9 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 					// check cookie expiration
 					if record.Expires.After(time.Now()) {
 						Info.Printf(
-							"%d, URL:%s%s, %s\n",
+							"%d, RAddr:%s, URL:%s%s, %s\n",
 							http.StatusOK,
+							r.RemoteAddr,
 							r.Header.Get("X-Forwarded-Host"),
 							r.Header.Get("X-Original-URI"),
 							messageValidCaptchaCookie,
@@ -312,8 +325,9 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Info.Printf(
-		"%d, URL:%s%s, %s\n",
+		"%d, RAddr:%s, URL:%s%s, %s\n",
 		http.StatusUnauthorized,
+		r.RemoteAddr,
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
 		messageInvalidCaptchaCookie,
