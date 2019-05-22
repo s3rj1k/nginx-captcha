@@ -112,29 +112,28 @@ const captchaHTMLTemplate = `
         display: table;
       }
     </style>
-    <script>
-      $(document).ready(function() {
-        $('#captcha').submit(function(event) {
-          event.preventDefault();
-          var xhr = new XMLHttpRequest();
-          var data = new FormData(document.getElementById("captcha"));
-          xhr.open('POST', '/', true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-          xhr.send(data);
-        });
-      });
-    </script>
   </head>
   <body>
     <div class="container">
       <h2>CAPTCHA</h2>
       <p>Please verify that you are not a robot.</p>
       <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .TextHash }}" />
-      <form id="#captcha" class="captcha" method="POST" action="/">
+      <form id="captchaForm" class="captcha" method="POST" action="/">
         <input type="hidden" name="hash" value="{{ .TextHash }}">
         <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="" autocomplete="off" autofocus>
         <button type="submit">VERIFY</button>
       </form>
+      <script defer>
+        document.getElementById('captchaForm').addEventListener('submit', function(event){
+          event.preventDefault();
+          var xhr = new XMLHttpRequest();
+          var data = new FormData(this);
+          xhr.open('POST', '/', true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+          xhr.send(data);
+          this.submit();
+        });
+      </script>
     </div>
   </body>
 </html>
