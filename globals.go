@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
@@ -12,31 +13,51 @@ import (
 const (
 	// defines case-insensitive list of captcha characters.
 	defaultCharsList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	// captcha cookie name
-	captchaCookieName = "captcha"
-	// number of seconds for captcha cookie expiration
-	captchaCookieExpirationSeconds = 86400
-	// number of seconds for captcha hash expiration
-	captchaHashExpirationSeconds = 60
+
+	// authentication cookie name
+	authenticationName = "t6f6e7r83mv6g8mzr4m739k6p"
+	// number of seconds for authentication cookie expiration
+	authenticationExpirationSeconds = 86400
+
+	// captcha form input names
+	challengeFormInputName = "challenge"
+	responseFormInputName  = "response"
+
+	// number of seconds for challenge hash expiration
+	challengeExpirationSeconds = 60
+
 	// number of nanoseconds in second
 	nanoSecondsInSecond = 1000000000
+
+	// HTTP code for non-authorized request, used in nginx redirects
+	unAuthorizedAccess = http.StatusUnauthorized
 )
 
 const (
-	messageOnlyGetOrPostMethod  = "only GET or POST method"
-	messageOnlyGetMethod        = "only GET method"
-	messageOnlyPostMethod       = "only POST method"
-	messageCaptchaFailure       = "captcha failure"
-	messageImageEncoderFailure  = "image encoder failure"
-	messageHTMLRenderFailure    = "HTML render failure"
-	messageUnknownCaptchaHash   = "unknown captcha hash"
-	messageExpiredCaptchaHash   = "expired captcha hash"
-	messageInvalidCaptchaAnswer = "invalid captcha answer"
-	messageEntropyFailure       = "entropy failure"
-	messageValidCaptchaCookie   = "valid captcha cookie"
-	messageInvalidCaptchaCookie = "invalid captcha cookie"
-	messageInvalidCaptchaHash   = "invalid captcha hash"
-	messageRecordExpired        = "record expired"
+	messageOnlyGetMethod       = "only GET method"
+	messageOnlyGetOrPostMethod = "only GET or POST method"
+	messageOnlyPostMethod      = "only POST method"
+
+	messageFailedCaptcha       = "captcha failure"
+	messageFailedImageEncoding = "image encoder failure"
+
+	messageFailedEntropy = "entropy failure"
+
+	messageFailedHTMLRender   = "HTML render failure"
+	messageFailedHTTPResponse = "HTTP responce failure"
+
+	messageExpiredChallenge = "expired challenge"
+	messageInvalidChallenge = "invalid challenge"
+	messageInvalidResponse  = "invalid response"
+
+	messageExpiredRecord    = "expired record"
+	messageUnknownChallenge = "unknown challenge"
+
+	messageEmptyAuthentication         = "empty authentication"
+	messageExpiredAuthentication       = "authentication expired"
+	messageInvalidAuthenticationDomain = "invalid authentication domain"
+	messageUnknownAuthentication       = "unknown authentication"
+	messageValidAuthentication         = "valid authentication"
 )
 
 type captchaDBRecord struct {
@@ -60,81 +81,40 @@ var (
 	cmdAddress string
 	// log date/time
 	cmdLogDateTime bool
+	// enable debug logging
+	cmdDebug bool
+
+	// empty favicon.ico
+	favicon = []byte{
+		000, 000, 001, 000, 001, 000, 016, 016,
+		002, 000, 001, 000, 001, 000, 176, 000,
+		000, 000, 022, 000, 000, 000, 040, 000,
+		000, 000, 016, 000, 000, 000, 032, 000,
+		000, 000, 001, 000, 001, 000, 000, 000,
+		000, 000, 128, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 255, 255, 255, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 000, 000,
+		000, 000, 000, 000, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000, 255, 255,
+		000, 000, 255, 255, 000, 000,
+	}
 
 	// Logging levels
 	Info  *log.Logger
 	Error *log.Logger
+	Debug *log.Logger
 )
-
-const captchaHTMLTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
-    <title>CAPTCHA</title>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      .container {
-        margin: auto;
-        max-width: 320px;
-      }
-      .container h2 {
-        text-align: center;
-      }
-      form.captcha input[type="text"] {
-        text-align: center;
-        padding: 10px;
-        font-size: 17px;
-        border: 1px solid grey;
-        float: left;
-        width: 74%;
-        background: #f1f1f1;
-      }
-      form.captcha button {
-        float: left;
-        width: 26%;
-        padding: 10px;
-        background: #2196F3;
-        color: white;
-        font-size: 17px;
-        border: 1px solid grey;
-        border-left: none;
-        cursor: pointer;
-      }
-      form.captcha button:hover {
-        background: #0b7dda;
-      }
-      form.captcha::after {
-        content: "";
-        clear: both;
-        display: table;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h2>CAPTCHA</h2>
-      <p>Please verify that you are not a robot.</p>
-      <img src="data:image/png;base64, {{ .Base64 }}" alt="{{ .TextHash }}" />
-      <form id="captchaForm" class="captcha" method="POST" action="/">
-        <input type="hidden" name="hash" value="{{ .TextHash }}">
-        <input type="text" name="answer" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}" value="" autocomplete="off" autofocus>
-        <button type="submit">VERIFY</button>
-      </form>
-      <script defer>
-        document.getElementById('captchaForm').addEventListener('submit', function(event){
-          event.preventDefault();
-          var xhr = new XMLHttpRequest();
-          var data = new FormData(this);
-          xhr.open('POST', '/', true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-          xhr.send(data);
-          this.submit();
-        });
-      </script>
-    </div>
-  </body>
-</html>
-`

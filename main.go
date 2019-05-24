@@ -11,9 +11,6 @@ import (
 	captcha "github.com/s3rj1k/captcha"
 )
 
-// ToDo:
-//  - Add HTML JS page Refresh (?)
-
 func main() {
 	var err error
 
@@ -49,8 +46,9 @@ func main() {
 
 	// create new HTTP mux and define HTTP routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", captchaHandle)
+	mux.HandleFunc("/", challengeHandle)
 	mux.HandleFunc("/auth", authHandle)
+	mux.HandleFunc("/favicon.ico", faviconHandler)
 
 	// run DB cleaner to clean expired keys
 	go cleanDB(&db)

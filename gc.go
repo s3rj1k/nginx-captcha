@@ -17,12 +17,10 @@ func cleanDB(db *sync.Map) {
 			if record, ok := val.(captchaDBRecord); ok {
 				// check expiration time
 				if record.Expires.Before(time.Now()) {
-					Info.Printf(
+					Debug.Printf(
 						"%d, Domain:%s, Key:%s, %s\n",
-						http.StatusOK,
-						record.Domain,
-						key,
-						messageRecordExpired,
+						http.StatusOK, record.Domain,
+						key, messageExpiredRecord,
 					)
 
 					// delete key

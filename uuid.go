@@ -9,7 +9,7 @@ import (
 // genUUID generates UUIDv4 (random).
 func genUUID() (string, error) {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
+	if _, err := rand.Read(b); err != nil { // nolint: gosec
 		return "", err
 	}
 
