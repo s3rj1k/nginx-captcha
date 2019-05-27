@@ -13,18 +13,30 @@ func cleanDB(db *sync.Map) {
 
 		// range over db
 		db.Range(func(key interface{}, val interface{}) bool {
-			// cast value to captcha record
-			if record, ok := val.(captchaDBRecord); ok {
-				// check expiration time
-				if record.Expires.Before(time.Now()) {
-					Debug.Printf(
-						"%d, Domain:%s, Key:%s, %s\n",
-						http.StatusOK, record.Domain,
-						key, messageExpiredRecord,
-					)
+			// cast key to string
+			if id, ok := key.(string); ok {
+				// cast value to captcha record
+				if record, ok := val.(captchaDBRecord); ok {
+					// check expiration time
+					if record.Expires.Before(time.Now()) {
+						Debug.Printf(
+							"%d, Domain:'%s', ID:'%s', %s\n",
+							http.StatusOK, record.Domain,
+							id, messageExpiredRecord,
+						)
 
-					// delete key
-					db.Delete(key)
+						// check then id is NOT UUID
+						if !reUUID.MatchString(id) {
+							Bot.Printf(
+								"%d, Domain:'%s', Addr:'%s', UA:'%s'\n",
+								http.StatusTeapot, record.Domain,
+								record.Address, record.UserAgent,
+							)
+						}
+
+						// delete key
+						db.Delete(key)
+					}
 				}
 			}
 

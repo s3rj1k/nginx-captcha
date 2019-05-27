@@ -6,10 +6,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 )
 
 // nolint: gochecknoinits
 func init() {
+	var err error
+
 	// command line flags
 	flag.StringVar(&cmdAddress, "address", "unix:/run/nginx-captcha.sock", `IP:PORT or Unix Socket path prefixd with "unix:"`)
 	flag.BoolVar(&cmdLogDateTime, "log-date-time", true, "add date/time to log output")
@@ -48,4 +51,15 @@ func init() {
 		"DEBUG: ",
 		logFlag,
 	)
+
+	Bot = log.New(
+		os.Stdout,
+		"BOT: ",
+		logFlag,
+	)
+
+	reUUID, err = regexp.Compile(regExpUUIDv4)
+	if err != nil {
+		Error.Fatalf("regexp compile error: %s\n", err.Error())
+	}
 }

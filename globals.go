@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 
@@ -20,8 +21,8 @@ const (
 	authenticationExpirationSeconds = 86400
 
 	// captcha form input names
-	challengeFormInputName = "challenge"
-	responseFormInputName  = "response"
+	challengeFormInputName = "44TQnXMjKY4h4Uv7"
+	responseFormInputName  = "j4drYUqwwaC8s6rD"
 
 	// number of seconds for challenge hash expiration
 	challengeExpirationSeconds = 60
@@ -31,6 +32,9 @@ const (
 
 	// HTTP code for non-authorized request, used in nginx redirects
 	unAuthorizedAccess = http.StatusUnauthorized
+
+	// regex for UUIDv4 validation
+	regExpUUIDv4 = `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[8,9,a,b][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`
 )
 
 const (
@@ -56,6 +60,7 @@ const (
 	messageEmptyAuthentication         = "empty authentication"
 	messageExpiredAuthentication       = "authentication expired"
 	messageInvalidAuthenticationDomain = "invalid authentication domain"
+	messageInvalidUserAgent            = "invalid authentication user-agent"
 	messageUnknownAuthentication       = "unknown authentication"
 	messageValidAuthentication         = "valid authentication"
 )
@@ -63,8 +68,13 @@ const (
 type captchaDBRecord struct {
 	// Domain defines valid captcha domain
 	Domain string
+	// UserAgent stores UA that originated from HTTP request
+	UserAgent string
 	// Expires defines captcha TTL
 	Expires time.Time
+
+	// Address stores address that originated from HTTP request
+	Address string
 }
 
 // nolint: gochecknoglobals
@@ -76,6 +86,9 @@ var (
 
 	// in memory key:value db
 	db sync.Map
+
+	// compiled RegExp for UUIDv4
+	reUUID *regexp.Regexp
 
 	// IP:PORT or unix socket path
 	cmdAddress string
@@ -117,4 +130,5 @@ var (
 	Info  *log.Logger
 	Error *log.Logger
 	Debug *log.Logger
+	Bot   *log.Logger
 )
