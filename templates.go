@@ -62,11 +62,16 @@ const captchaHTMLTemplate = `
         document.getElementById('captchaForm').addEventListener('submit', function(event){
           event.preventDefault();
           var xhr = new XMLHttpRequest();
-          var data = new FormData(this);
+          var data = {{ .ChallengeInputName }} + '=' + document.getElementById("captchaForm").elements["{{ .ChallengeInputName }}"].value;
+          data += '&' + {{ .ResponceInputName }} + '=' + document.getElementById("captchaForm").elements["{{ .ResponceInputName }}"].value;
           xhr.open('POST', '/', true);
           xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
           xhr.send(data);
-          this.submit();
+          xhr.onreadystatechange = function() {
+            if (this.readyState != 4) return;
+            window.location.assign(window.location.href);
+            document.location.reload(true);
+          }
         });
       </script>
     </div>
