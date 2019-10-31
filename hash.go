@@ -11,5 +11,6 @@ import (
 func getStringHash(text ...string) string {
 	b := []byte(strings.Join(text, ""))
 	h := blake2s.Sum256(b)
+
 	return fmt.Sprintf("%x", h)
 }

@@ -48,7 +48,7 @@ const (
 	messageFailedEntropy = "entropy failure"
 
 	messageFailedHTMLRender   = "HTML render failure"
-	messageFailedHTTPResponse = "HTTP responce failure"
+	messageFailedHTTPResponse = "HTTP response failure"
 
 	messageExpiredChallenge = "expired challenge"
 	messageInvalidChallenge = "invalid challenge"
