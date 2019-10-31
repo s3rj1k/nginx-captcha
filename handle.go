@@ -3,10 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"image/jpeg"
-	"net"
 	"net/http"
-	"os"
 	"strings"
 	"syscall"
 	"time"
@@ -79,6 +78,14 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set to True when captcha requested with lite template flag
+	var isLiteTemplate bool
+
+	// check for lite template header
+	if strings.EqualFold(r.Header.Get("X-LiteTemplate"), "TRUE") {
+		isLiteTemplate = true
+	}
+
 	// generate new captcha image
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
@@ -101,8 +108,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	var buff bytes.Buffer
 
 	// encode captcha to JPEG
-	err = jpeg.Encode(&buff, captchaObj.Image, nil)
-	if err != nil {
+	if err = jpeg.Encode(&buff, captchaObj.Image, nil); err != nil {
 		Error.Printf(
 			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
 			http.StatusInternalServerError,
@@ -132,24 +138,27 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
-		r.UserAgent(), captchaObj.Text,
+		r.UserAgent(),
+		captchaObj.Text,
 		challenge, challengeTTL,
 	)
 
 	// populate struct with needed data for template render
 	data := struct {
-		Base64             string
-		TextHash           string
-		ChallengeInputName string
-		ResponceInputName  string
+		Base64       string
+		TextHash     string
+		ChallengeKey string
+		ResponseKey  string
+		ImageID      string
 	}{
 		// encode JPEG to base for data:URI
 		Base64: base64.StdEncoding.EncodeToString(buff.Bytes()),
 		// set captcha text hash
 		TextHash: challenge,
 		// form input names
-		ChallengeInputName: challengeFormInputName,
-		ResponceInputName:  responseFormInputName,
+		ChallengeKey: challengeKey,
+		ResponseKey:  responseKey,
+		ImageID:      imageID,
 	}
 
 	// store captcha hash to db
@@ -168,15 +177,16 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Clear-Site-Data", `"cache"`)
 
 	// render captcha template
-	err = captchaTemplate.Execute(w, data)
+	if isLiteTemplate {
+		err = captchaLiteTemplate.Execute(w, data)
+	} else {
+		err = captchaHTMLTemplate.Execute(w, data)
+	}
+
 	if err != nil {
 		// ignore buffer errors
-		if nErr, ok := err.(*net.OpError); ok {
-			if sysErr, ok := nErr.Err.(*os.SyscallError); ok {
-				if sysErr.Err == syscall.EPIPE {
-					return
-				}
-			}
+		if errors.Is(err, syscall.EPIPE) {
+			return
 		}
 
 		Error.Printf(
@@ -216,10 +226,10 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get captcha answer from request form, case insensitive
-	response := strings.ToUpper(strings.TrimSpace(r.PostFormValue(responseFormInputName)))
-	// get hidden captcha answer hash from request form
-	challenge := strings.TrimSpace(r.PostFormValue(challengeFormInputName))
+	// get captcha answer, case insensitive
+	response := strings.ToUpper(r.PostFormValue(responseKey))
+	// get hidden captcha answer
+	challenge := r.PostFormValue(challengeKey)
 
 	Debug.Printf(
 		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Response:'%s', Challenge:'%s'\n",
