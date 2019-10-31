@@ -54,6 +54,7 @@ func challengeHandle(w http.ResponseWriter, r *http.Request) {
 			),
 		)
 		http.Error(w, messageOnlyGetOrPostMethod, http.StatusMethodNotAllowed)
+
 		return
 	}
 }
@@ -74,6 +75,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		// return proper HTTP error with headers
 		w.Header().Set("Allow", http.MethodGet)
 		http.Error(w, messageOnlyGetMethod, http.StatusMethodNotAllowed)
+
 		return
 	}
 
@@ -92,6 +94,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageFailedCaptcha, http.StatusInternalServerError)
+
 		return
 	}
 
@@ -112,6 +115,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageFailedImageEncoding, http.StatusInternalServerError)
+
 		return
 	}
 
@@ -187,6 +191,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageFailedHTMLRender, http.StatusInternalServerError)
+
 		return
 	}
 }
@@ -207,6 +212,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		// return proper HTTP error with headers
 		w.Header().Set("Allow", http.MethodPost)
 		http.Error(w, messageOnlyPostMethod, http.StatusMethodNotAllowed)
+
 		return
 	}
 
@@ -216,7 +222,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	challenge := strings.TrimSpace(r.PostFormValue(challengeFormInputName))
 
 	Debug.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Responce:'%s', Challenge:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Response:'%s', Challenge:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
@@ -243,6 +249,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// redirect to self
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+
 		return
 	}
 
@@ -261,6 +268,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageUnknownChallenge, http.StatusInternalServerError)
+
 		return
 	}
 
@@ -278,6 +286,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// redirect to self
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+
 		return
 	}
 
@@ -295,6 +304,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// redirect to self
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+
 		return
 	}
 
@@ -312,6 +322,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// redirect to self
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+
 		return
 	}
 
@@ -329,6 +340,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageFailedEntropy, http.StatusInternalServerError)
+
 		return
 	}
 
@@ -338,7 +350,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	expires := time.Now().Add(authenticationTTL)
 
 	Info.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Responce:'%s', Challenge:'%s', Auth:'%s', TTL:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Response:'%s', Challenge:'%s', Auth:'%s', TTL:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
@@ -392,6 +404,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageEmptyAuthentication, unAuthorizedAccess)
+
 		return
 	}
 
@@ -410,6 +423,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageUnknownAuthentication, unAuthorizedAccess)
+
 		return
 	}
 
@@ -428,6 +442,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageUnknownAuthentication, unAuthorizedAccess)
+
 		return
 	}
 
@@ -446,6 +461,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageInvalidAuthenticationDomain, unAuthorizedAccess)
+
 		return
 	}
 
@@ -463,6 +479,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 
 		// return proper HTTP error
 		http.Error(w, messageInvalidUserAgent, unAuthorizedAccess)
+
 		return
 	}
 
