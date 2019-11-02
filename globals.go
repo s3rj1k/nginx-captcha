@@ -21,8 +21,9 @@ const (
 	authenticationExpirationSeconds = 86400
 
 	// captcha form input names
-	challengeFormInputName = "44TQnXMjKY4h4Uv7"
-	responseFormInputName  = "j4drYUqwwaC8s6rD"
+	challengeKey = "captcha_challenge"
+	responseKey  = "captcha_response"
+	imageID      = "captcha_image"
 
 	// number of seconds for challenge hash expiration
 	challengeExpirationSeconds = 60
@@ -80,7 +81,10 @@ type captchaDBRecord struct {
 // nolint: gochecknoglobals
 var (
 	// captcha HTML template
-	captchaTemplate *template.Template
+	captchaHTMLTemplate *template.Template
+	// captcha Lite HTML template
+	captchaLiteTemplate *template.Template
+
 	// captcha config object
 	captchaConfig *captcha.Options
 

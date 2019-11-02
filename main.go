@@ -39,7 +39,13 @@ func main() {
 	}
 
 	// prepare captcha HTML template
-	captchaTemplate, err = template.New("captcha.html").Parse(captchaHTMLTemplate)
+	captchaHTMLTemplate, err = template.New("captcha.html").Parse(captchaHTML)
+	if err != nil {
+		Error.Fatalf("captcha service template error: %s\n", err.Error())
+	}
+
+	// prepare captcha Lite HTML template
+	captchaLiteTemplate, err = template.New("captcha-lite.html").Parse(captchaLight)
 	if err != nil {
 		Error.Fatalf("captcha service template error: %s\n", err.Error())
 	}
