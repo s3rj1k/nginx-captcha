@@ -71,7 +71,7 @@ const captchaHTML = `
         <button type="submit">VERIFY</button>
       </form>
 
-      <script defer>
+      <script async="false">
         document.getElementById('captcha_form').addEventListener('submit', function(event){
           event.preventDefault();
 
