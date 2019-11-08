@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 func faviconHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,8 +21,7 @@ func faviconHandler(w http.ResponseWriter, r *http.Request) {
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
-			messageFailedHTTPResponse,
+			r.UserAgent(), messageFailedHTTPResponse,
 		)
 	}
 }
@@ -38,8 +39,7 @@ func challengeHandle(w http.ResponseWriter, r *http.Request) {
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
-			messageOnlyGetOrPostMethod,
+			r.UserAgent(), messageOnlyGetOrPostMethod,
 		)
 
 		// return proper HTTP error with headers
@@ -67,8 +67,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
-			messageOnlyGetMethod,
+			r.UserAgent(), messageOnlyGetMethod,
 		)
 
 		// return proper HTTP error with headers
@@ -76,6 +75,16 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, messageOnlyGetMethod, http.StatusMethodNotAllowed)
 
 		return
+	}
+
+	// define domain for a cookie
+	domain := r.Header.Get("X-Forwarded-Host")
+
+	// compute wildcard domain cookie then appropriate configuration header present
+	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
+		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
+			domain = "." + val
+		}
 	}
 
 	// set to True when captcha requested with lite template flag
@@ -90,12 +99,12 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	captchaObj, err := captchaConfig.CreateImage()
 	if err != nil {
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
 			http.StatusInternalServerError,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
+			domain, r.UserAgent(),
 			messageFailedCaptcha,
 		)
 
@@ -110,12 +119,12 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// encode captcha to JPEG
 	if err = jpeg.Encode(&buff, captchaObj.Image, nil); err != nil {
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
 			http.StatusInternalServerError,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
+			domain, r.UserAgent(),
 			messageFailedImageEncoding,
 		)
 
@@ -133,12 +142,12 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	challenge := getStringHash(captchaObj.Text)
 
 	Info.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', CAPTCHA:'%s', Challenge:'%s', TTL:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', CAPTCHA:'%s', Challenge:'%s', TTL:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
-		r.UserAgent(),
+		domain, r.UserAgent(),
 		captchaObj.Text,
 		challenge, challengeTTL,
 	)
@@ -164,7 +173,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// store captcha hash to db
 	db.Store(data.TextHash,
 		captchaDBRecord{
-			Domain:    r.Header.Get("X-Forwarded-Host"),
+			Domain:    domain,
 			UserAgent: r.UserAgent(),
 			Expires:   expires,
 
@@ -190,12 +199,12 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
 			http.StatusInternalServerError,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
+			domain, r.UserAgent(),
 			messageFailedHTMLRender,
 		)
 
@@ -215,8 +224,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
-			messageOnlyPostMethod,
+			r.UserAgent(), messageOnlyPostMethod,
 		)
 
 		// return proper HTTP error with headers
@@ -226,18 +234,29 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// define domain for a cookie
+	domain := r.Header.Get("X-Forwarded-Host")
+
+	// compute wildcard domain cookie then appropriate configuration header present
+	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
+		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
+			domain = "." + val
+		}
+	}
+
 	// get captcha answer, case insensitive
 	response := strings.ToUpper(r.PostFormValue(responseKey))
 	// get hidden captcha answer
 	challenge := r.PostFormValue(challengeKey)
 
 	Debug.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Response:'%s', Challenge:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Response:'%s', Challenge:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
-		r.UserAgent(), response, challenge,
+		domain, r.UserAgent(),
+		response, challenge,
 	)
 
 	// https://www.fastly.com/blog/clearing-cache-browser
@@ -248,13 +267,13 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	val, ok := db.Load(challenge)
 	if !ok {
 		Info.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Challenge:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', %s\n",
 			http.StatusSeeOther,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), challenge,
-			messageUnknownChallenge,
+			domain, r.UserAgent(),
+			challenge, messageUnknownChallenge,
 		)
 
 		// redirect to self
@@ -267,13 +286,13 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	record, ok := val.(captchaDBRecord)
 	if !ok {
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Challenge:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', %s\n",
 			http.StatusInternalServerError,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), challenge,
-			messageUnknownChallenge,
+			domain, r.UserAgent(),
+			challenge, messageUnknownChallenge,
 		)
 
 		// return proper HTTP error
@@ -283,15 +302,15 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check that captcha hash is valid for domain
-	if !strings.EqualFold(r.Header.Get("X-Forwarded-Host"), record.Domain) {
+	if !strings.EqualFold(domain, record.Domain) {
 		Info.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Challenge:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', %s\n",
 			http.StatusSeeOther,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), challenge,
-			messageInvalidChallenge,
+			domain, r.UserAgent(),
+			challenge, messageInvalidChallenge,
 		)
 
 		// redirect to self
@@ -303,13 +322,13 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// check captcha hash expiration
 	if record.Expires.Before(time.Now()) {
 		Info.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Challenge:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', %s\n",
 			http.StatusSeeOther,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), challenge,
-			messageExpiredChallenge,
+			domain, r.UserAgent(),
+			challenge, messageExpiredChallenge,
 		)
 
 		// redirect to self
@@ -321,13 +340,13 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// validate user inputed captcha response
 	if getStringHash(response) != challenge {
 		Info.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Challenge:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', %s\n",
 			http.StatusSeeOther,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), challenge,
-			messageInvalidResponse,
+			domain, r.UserAgent(),
+			challenge, messageInvalidResponse,
 		)
 
 		// redirect to self
@@ -340,12 +359,13 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	id, err := genUUID()
 	if err != nil {
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
 			http.StatusInternalServerError,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), messageFailedEntropy,
+			domain, r.UserAgent(),
+			messageFailedEntropy,
 		)
 
 		// return proper HTTP error
@@ -360,13 +380,14 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	expires := time.Now().Add(authenticationTTL)
 
 	Info.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Response:'%s', Challenge:'%s', Auth:'%s', TTL:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Response:'%s', Challenge:'%s', Auth:'%s', TTL:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
-		r.UserAgent(), response,
-		challenge, id, authenticationTTL,
+		domain, r.UserAgent(),
+		response, challenge,
+		id, authenticationTTL,
 	)
 
 	// challenge is valid, invalidating used challenge hash
@@ -375,7 +396,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// store captcha hash to db
 	db.Store(id,
 		captchaDBRecord{
-			Domain:    r.Header.Get("X-Forwarded-Host"),
+			Domain:    domain,
 			UserAgent: r.UserAgent(),
 			Expires:   expires,
 
@@ -383,16 +404,29 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	// create cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     authenticationName,
-		Value:    id,
-		Expires:  expires,
-		MaxAge:   int(expires.Unix() - time.Now().Unix()),
-		Secure:   false,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	// set cookie for wildcard domain cookie, domain starts with '.'
+	if strings.HasPrefix(domain, ".") {
+		http.SetCookie(w, &http.Cookie{
+			Domain:   domain,
+			Name:     authenticationName,
+			Value:    id,
+			Expires:  expires,
+			MaxAge:   int(expires.Unix() - time.Now().Unix()),
+			Secure:   false,
+			HttpOnly: false,
+			SameSite: http.SameSiteNoneMode,
+		})
+	} else { // non-wildcard cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:     authenticationName,
+			Value:    id,
+			Expires:  expires,
+			MaxAge:   int(expires.Unix() - time.Now().Unix()),
+			Secure:   false,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+		})
+	}
 
 	// redirect to self
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -408,8 +442,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(),
-			messageEmptyAuthentication,
+			r.UserAgent(), messageEmptyAuthentication,
 		)
 
 		// return proper HTTP error
@@ -418,17 +451,27 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// define domain for a cookie
+	domain := r.Header.Get("X-Forwarded-Host")
+
+	// compute wildcard domain cookie then appropriate configuration header present
+	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
+		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
+			domain = "." + val
+		}
+	}
+
 	// lookup cookie value in db
 	val, ok := db.Load(auth.Value)
 	if !ok {
 		Debug.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s\n",
 			unAuthorizedAccess,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), auth.Value,
-			messageUnknownAuthentication,
+			domain, r.UserAgent(),
+			auth.Value, messageUnknownAuthentication,
 		)
 
 		// return proper HTTP error
@@ -441,13 +484,13 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	record, ok := val.(captchaDBRecord)
 	if !ok {
 		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s\n",
 			unAuthorizedAccess,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), auth.Value,
-			messageUnknownAuthentication,
+			domain, r.UserAgent(),
+			auth.Value, messageUnknownAuthentication,
 		)
 
 		// return proper HTTP error
@@ -457,14 +500,14 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check that cookie is valid for domain
-	if !strings.EqualFold(r.Header.Get("X-Forwarded-Host"), record.Domain) {
+	if !strings.EqualFold(domain, record.Domain) {
 		Debug.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s (%s)\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s (%s)\n",
 			unAuthorizedAccess,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), auth.Value,
+			domain, r.UserAgent(), auth.Value,
 			messageInvalidAuthenticationDomain,
 			record.Domain,
 		)
@@ -478,12 +521,12 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	// check that cookie is valid for UA
 	if !strings.EqualFold(r.UserAgent(), record.UserAgent) {
 		Debug.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s (%s)\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s (%s)\n",
 			unAuthorizedAccess,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), auth.Value,
+			domain, r.UserAgent(), auth.Value,
 			messageInvalidUserAgent, record.UserAgent,
 		)
 
@@ -496,12 +539,12 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	// check cookie expiration
 	if !record.Expires.After(time.Now()) {
 		Debug.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s\n",
+			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s\n",
 			unAuthorizedAccess,
 			r.Header.Get("X-Real-IP"),
 			r.Header.Get("X-Forwarded-Host"),
 			r.Header.Get("X-Original-URI"),
-			r.UserAgent(), auth.Value,
+			domain, r.UserAgent(), auth.Value,
 			messageExpiredAuthentication,
 		)
 
@@ -510,12 +553,12 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Debug.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', UA:'%s', Auth:'%s', %s\n",
+		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Auth:'%s', %s\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
-		r.UserAgent(), auth.Value,
+		domain, r.UserAgent(), auth.Value,
 		messageValidAuthentication,
 	)
 }
