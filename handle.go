@@ -87,6 +87,19 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// clean old invalid cookies
+	http.SetCookie(w, &http.Cookie{
+		Domain:  domain,
+		Name:    authenticationName,
+		Value:   "",
+		Expires: time.Unix(0, 0),
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:    authenticationName,
+		Value:   "",
+		Expires: time.Unix(0, 0),
+	})
+
 	// set to True when captcha requested with lite template flag
 	var isLiteTemplate bool
 
@@ -511,6 +524,14 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 			messageInvalidAuthenticationDomain,
 			record.Domain,
 		)
+
+		// when we switch form wildcard to none-wildcard cookie we need to clean DB records for this domain
+		if strings.EqualFold(
+			strings.TrimPrefix(domain, "."),
+			strings.TrimPrefix(record.Domain, "."),
+		) {
+			db.Delete(auth.Value)
+		}
 
 		// return proper HTTP error
 		http.Error(w, messageInvalidAuthenticationDomain, unAuthorizedAccess)
