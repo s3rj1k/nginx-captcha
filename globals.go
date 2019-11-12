@@ -64,6 +64,8 @@ const (
 	messageInvalidUserAgent            = "invalid authentication user-agent"
 	messageUnknownAuthentication       = "unknown authentication"
 	messageValidAuthentication         = "valid authentication"
+
+	messageAllowOptionsRequest = "allow OPTIONS method"
 )
 
 type captchaDBRecord struct {

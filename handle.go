@@ -32,6 +32,22 @@ func challengeHandle(w http.ResponseWriter, r *http.Request) {
 		renderHandle(w, r)
 	case http.MethodPost:
 		validateHandle(w, r)
+	case http.MethodOptions:
+		// OPTIONS is needed for CORS to function properly, we allow all OPTIONS requests when specific header is passed
+		if strings.EqualFold(r.Header.Get("X-Allow-OPTIONS"), "TRUE") {
+			Debug.Printf(
+				"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+				http.StatusAccepted,
+				r.Header.Get("X-Real-IP"),
+				r.Header.Get("X-Forwarded-Host"),
+				r.Header.Get("X-Original-URI"),
+				r.UserAgent(), messageAllowOptionsRequest,
+			)
+
+			return
+		}
+
+		fallthrough
 	default:
 		Debug.Printf(
 			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
@@ -42,16 +58,23 @@ func challengeHandle(w http.ResponseWriter, r *http.Request) {
 			r.UserAgent(), messageOnlyGetOrPostMethod,
 		)
 
+		// set default allowed headers
+		allowHeader := []string{
+			http.MethodGet,
+			http.MethodPost,
+		}
+
+		if strings.EqualFold(r.Header.Get("X-Allow-OPTIONS"), "TRUE") {
+			// add OPTIONS to allowed headers
+			allowHeader = append(allowHeader, http.MethodOptions)
+		}
+
 		// return proper HTTP error with headers
 		w.Header().Set(
 			"Allow",
-			strings.Join(
-				[]string{
-					http.MethodGet,
-					http.MethodPost,
-				}, ", ",
-			),
+			strings.Join(allowHeader, ", "),
 		)
+
 		http.Error(w, messageOnlyGetOrPostMethod, http.StatusMethodNotAllowed)
 
 		return
