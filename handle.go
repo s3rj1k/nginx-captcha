@@ -470,7 +470,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 
 func authHandle(w http.ResponseWriter, r *http.Request) {
 	// allow web font for '@font-face' request from CSS
-	if strings.EqualFold(r.Header.Get("X-AllowWebFont"), "TRUE") &&
+	if strings.EqualFold(r.Header.Get("X-Allow-Web-Font"), "TRUE") &&
 		isFontInURL(r.Header.Get("X-Original-URI")) {
 		Debug.Printf(
 			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
