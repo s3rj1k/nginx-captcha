@@ -469,6 +469,21 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func authHandle(w http.ResponseWriter, r *http.Request) {
+	// allow web font for '@font-face' request from CSS
+	if strings.EqualFold(r.Header.Get("X-AllowWebFont"), "TRUE") &&
+		isFontInURL(r.Header.Get("X-Original-URI")) {
+		Debug.Printf(
+			"%d, RAddr:'%s', URL:'%s%s', UA:'%s', %s\n",
+			http.StatusOK,
+			r.Header.Get("X-Real-IP"),
+			r.Header.Get("X-Forwarded-Host"),
+			r.Header.Get("X-Original-URI"),
+			r.UserAgent(), messageAllowWebFont,
+		)
+
+		return
+	}
+
 	// get challenge cookie value from request
 	auth, err := r.Cookie(authenticationName)
 	if err != nil || auth == nil {

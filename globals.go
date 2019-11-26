@@ -66,6 +66,7 @@ const (
 	messageValidAuthentication         = "valid authentication"
 
 	messageAllowOptionsRequest = "allow OPTIONS method"
+	messageAllowWebFont        = "allow web font"
 )
 
 type captchaDBRecord struct {
