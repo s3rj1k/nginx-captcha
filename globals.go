@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"sync"
 	"time"
-
-	captcha "github.com/s3rj1k/captcha"
 )
 
 const (
@@ -42,9 +40,6 @@ const (
 	messageOnlyGetMethod       = "only GET method"
 	messageOnlyGetOrPostMethod = "only GET or POST method"
 	messageOnlyPostMethod      = "only POST method"
-
-	messageFailedCaptcha       = "captcha failure"
-	messageFailedImageEncoding = "image encoder failure"
 
 	messageFailedEntropy = "entropy failure"
 
@@ -88,11 +83,11 @@ var (
 	// captcha Lite HTML template
 	captchaLiteTemplate *template.Template
 
-	// captcha config object
-	captchaConfig *captcha.Options
-
-	// in memory key:value db
+	// in memory key:value database
 	db sync.Map
+
+	// in memory captcha database
+	captchaDB Data
 
 	// compiled RegExp for UUIDv4
 	reUUID *regexp.Regexp
@@ -103,6 +98,10 @@ var (
 	cmdLogDateTime bool
 	// enable debug logging
 	cmdDebug bool
+	// generates CAPTCHA to a file DB
+	cmdGenerate uint
+	// path to CAPTCHA DB file
+	cmdDBPath string
 
 	// empty favicon.ico
 	favicon = []byte{

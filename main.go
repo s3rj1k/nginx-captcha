@@ -7,35 +7,15 @@ import (
 	"os"
 	"strings"
 	"syscall"
-
-	captcha "github.com/s3rj1k/captcha"
 )
 
 func main() {
 	var err error
 
-	// define default captcha config
-	captchaConfig, err = captcha.NewOptions()
+	// read CAPTCHAs to memory
+	captchaDB, err = readCaptchaDB(cmdDBPath)
 	if err != nil {
-		Error.Fatalf("captcha service config error: %s\n", err.Error())
-	}
-
-	// set new captcha characters list
-	err = captchaConfig.SetCharacterList(defaultCharsList)
-	if err != nil {
-		Error.Fatalf("captcha service config error: %s\n", err.Error())
-	}
-
-	// set captcha length
-	err = captchaConfig.SetCaptchaTextLength(6)
-	if err != nil {
-		Error.Fatalf("captcha service config error: %s\n", err.Error())
-	}
-
-	// set captcha image size
-	err = captchaConfig.SetDimensions(320, 100)
-	if err != nil {
-		Error.Fatalf("captcha service config error: %s\n", err.Error())
+		Error.Fatalf("%s\n", err.Error())
 	}
 
 	// prepare captcha HTML template

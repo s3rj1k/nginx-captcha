@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"errors"
-	"image/jpeg"
 	"net/http"
 	"strings"
 	"syscall"
@@ -131,60 +128,21 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		isLiteTemplate = true
 	}
 
-	// generate new captcha image
-	captchaObj, err := captchaConfig.CreateImage()
-	if err != nil {
-		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
-			http.StatusInternalServerError,
-			r.Header.Get("X-Real-IP"),
-			r.Header.Get("X-Forwarded-Host"),
-			r.Header.Get("X-Original-URI"),
-			domain, r.UserAgent(),
-			messageFailedCaptcha,
-		)
-
-		// return proper HTTP error
-		http.Error(w, messageFailedCaptcha, http.StatusInternalServerError)
-
-		return
-	}
-
-	var buff bytes.Buffer
-
-	// encode captcha to JPEG
-	if err = jpeg.Encode(&buff, captchaObj.Image, nil); err != nil {
-		Error.Printf(
-			"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', %s\n",
-			http.StatusInternalServerError,
-			r.Header.Get("X-Real-IP"),
-			r.Header.Get("X-Forwarded-Host"),
-			r.Header.Get("X-Original-URI"),
-			domain, r.UserAgent(),
-			messageFailedImageEncoding,
-		)
-
-		// return proper HTTP error
-		http.Error(w, messageFailedImageEncoding, http.StatusInternalServerError)
-
-		return
-	}
+	// get random captcha from memory
+	challenge, b64str := captchaDB.GetRandomKeyValue()
 
 	// set how long cookie is valid
 	challengeTTL := time.Duration(challengeExpirationSeconds * nanoSecondsInSecond)
 	// generate expire date for captcha hash
 	expires := time.Now().Add(challengeTTL)
-	// generate hash of captcha string
-	challenge := getStringHash(captchaObj.Text)
 
 	Info.Printf(
-		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', CAPTCHA:'%s', Challenge:'%s', TTL:'%s'\n",
+		"%d, RAddr:'%s', URL:'%s%s', Dom:'%s', UA:'%s', Challenge:'%s', TTL:'%s'\n",
 		http.StatusOK,
 		r.Header.Get("X-Real-IP"),
 		r.Header.Get("X-Forwarded-Host"),
 		r.Header.Get("X-Original-URI"),
 		domain, r.UserAgent(),
-		captchaObj.Text,
 		challenge, challengeTTL,
 	)
 
@@ -196,8 +154,8 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 		ResponseKey  string
 		ImageID      string
 	}{
-		// encode JPEG to base for data:URI
-		Base64: base64.StdEncoding.EncodeToString(buff.Bytes()),
+		// base64 encoded JPEG for data:URI
+		Base64: b64str,
 		// set captcha text hash
 		TextHash: challenge,
 		// form input names
@@ -220,6 +178,8 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// https://www.fastly.com/blog/clearing-cache-browser
 	// https://www.w3.org/TR/clear-site-data/
 	w.Header().Set("Clear-Site-Data", `"cache"`)
+
+	var err error
 
 	// render captcha template
 	if isLiteTemplate {
