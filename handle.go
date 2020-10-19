@@ -100,7 +100,7 @@ func renderHandle(w http.ResponseWriter, r *http.Request) {
 	// define domain for a cookie
 	domain := r.Header.Get("X-Forwarded-Host")
 
-	// compute wildcard domain cookie then appropriate configuration header present
+	// compute wildcard domain cookie when appropriate configuration header present
 	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
 		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
 			domain = "." + val
@@ -233,7 +233,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 	// define domain for a cookie
 	domain := r.Header.Get("X-Forwarded-Host")
 
-	// compute wildcard domain cookie then appropriate configuration header present
+	// compute wildcard domain cookie when appropriate configuration header present
 	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
 		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
 			domain = "." + val
@@ -465,7 +465,7 @@ func authHandle(w http.ResponseWriter, r *http.Request) {
 	// define domain for a cookie
 	domain := r.Header.Get("X-Forwarded-Host")
 
-	// compute wildcard domain cookie then appropriate configuration header present
+	// compute wildcard domain cookie when appropriate configuration header present
 	if strings.EqualFold(r.Header.Get("X-TLDPlusOne"), "TRUE") {
 		if val, err := publicsuffix.EffectiveTLDPlusOne(r.Header.Get("X-Forwarded-Host")); err == nil {
 			domain = "." + val
