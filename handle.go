@@ -408,7 +408,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 			Value:    id,
 			Expires:  expires,
 			MaxAge:   int(expires.Unix() - time.Now().Unix()),
-			Secure:   false,
+			Secure:   isHTTPS(r.Header),
 			HttpOnly: false,
 			SameSite: http.SameSiteNoneMode,
 		})
@@ -418,7 +418,7 @@ func validateHandle(w http.ResponseWriter, r *http.Request) {
 			Value:    id,
 			Expires:  expires,
 			MaxAge:   int(expires.Unix() - time.Now().Unix()),
-			Secure:   false,
+			Secure:   isHTTPS(r.Header),
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		})
